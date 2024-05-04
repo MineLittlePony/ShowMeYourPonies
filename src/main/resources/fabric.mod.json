@@ -9,11 +9,11 @@
   ],
   "contact": {
     "homepage": "https://minelittlepony-mod.com/",
-    "sources": "https://github.com/MineLittlePony/MineLittlePony",
-    "issues": "https://github.com/MineLittlePony/MineLittlePony/issues"
+    "sources": "https://github.com/MineLittlePony/ShowMeYourPonies",
+    "issues": "https://github.com/MineLittlePony/ShowMeYourPonies/issues"
   },
   "license": "MIT",
-  "icon": "minelp_logo.png",
+  "icon": "smyp_logo.png",
   "environment": "client",
   "entrypoints": {
     "minelittlepony": [
@@ -27,5 +27,19 @@
     "fabric-api": "${fabricVersion}",
     "showmeyourskin": "${smysVersion}",
     "minelp": "${minelpVersion}"
+  },
+  "suggests": {
+    "modmenu": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/zKSZ8Mg",
+        "modmenu.github_releases": "https://github.com/MineLittlePony/ShowMeYourPonies/releases",
+        "modmenu.modrinth": "https://modrinth.com/mod/show-me-your-ponies"
+      },
+      "parent": "minelp",
+      "update_checker": true
+    }
   }
 }
