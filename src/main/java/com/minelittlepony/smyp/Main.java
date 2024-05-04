@@ -1,9 +1,7 @@
 package com.minelittlepony.smyp;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
-import net.minecraft.client.texture.Sprite;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ArmorMaterial;
@@ -26,7 +24,7 @@ public class Main implements ClientModInitializer {
         ArmourRendererPlugin.register(PluginImpl::new);
     }
 
-    static class PluginImpl implements ArmourRendererPlugin {
+    static final class PluginImpl implements ArmourRendererPlugin {
         @Nullable
         private ArmorContext context;
 
@@ -43,42 +41,35 @@ public class Main implements ClientModInitializer {
         }
 
         @Override
-        public boolean shouldRenderGlint(EquipmentSlot slot, ItemStack stack) {
-            return parent.shouldRenderGlint(slot, stack) && (context == null || !context.shouldModify() || context.getApplicableGlintTransparency() > 0);
+        public float getGlintAlpha(EquipmentSlot slot, ItemStack stack) {
+            return parent.getGlintAlpha(slot, stack) * (context == null || !context.shouldModify() ? 1 : context.getApplicableGlintTransparency());
+        }
+
+        @Override
+        public float getArmourAlpha(EquipmentSlot slot, ArmourLayer layer) {
+            return context != null && context.shouldModify() ? context.getApplicablePieceTransparency() : parent.getArmourAlpha(slot, layer);
+        }
+
+        @Override
+        public float getTrimAlpha(EquipmentSlot slot, RegistryEntry<ArmorMaterial> material, ArmorTrim trim, ArmourLayer layer) {
+            return context != null && context.shouldModify() ? context.getApplicableTrimTransparency() : parent.getTrimAlpha(slot, material, trim, layer);
         }
 
         @Override
         @Nullable
-        public VertexConsumer getArmourConsumer(EquipmentSlot slot, VertexConsumerProvider provider, Identifier texture, ArmourLayer layer) {
-            if (context != null && context.shouldModify()) {
-                float transparency = context.getApplicablePieceTransparency();
-                if (transparency <= 0) {
-                    return null;
-                }
-                if (transparency < 1) {
-                    return provider.getBuffer(ModRenderLayers.ARMOR_TRANSLUCENT_NO_CULL.apply(texture));
-                }
-            }
-            return parent.getArmourConsumer(slot, provider, texture, layer);
+        public RenderLayer getArmourLayer(EquipmentSlot slot, Identifier texture, ArmourLayer layer) {
+            return context != null && context.shouldModify() && context.getApplicablePieceTransparency() < 1
+                    ? ModRenderLayers.ARMOR_TRANSLUCENT_NO_CULL.apply(texture)
+                    : parent.getArmourLayer(slot, texture, layer);
         }
 
         @Override
         @Nullable
-        public VertexConsumer getTrimConsumer(EquipmentSlot slot, VertexConsumerProvider provider, RegistryEntry<ArmorMaterial> material, ArmorTrim trim, ArmourLayer layer) {
-            if (context != null && context.shouldModify()) {
-                float transparency = context.getApplicableTrimTransparency();
-                if (transparency <= 0) {
-                    return null;
-                }
+        public RenderLayer getTrimLayer(EquipmentSlot slot, RegistryEntry<ArmorMaterial> material, ArmorTrim trim, ArmourLayer layer) {
+            return context != null && context.shouldModify() && context.getApplicableTrimTransparency() < 1
+                    ? ModRenderLayers.ARMOR_TRANSLUCENT_NO_CULL.apply(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE)
+                    : parent.getTrimLayer(slot, material, trim, layer);
 
-                if (transparency < 1) {
-                    Sprite sprite = MinecraftClient.getInstance().getBakedModelManager().getAtlas(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE).getSprite(layer == ArmourLayer.INNER ? trim.getLeggingsModelId(material) : trim.getGenericModelId(material));
-                    return sprite.getTextureSpecificVertexConsumer(
-                            provider.getBuffer(ModRenderLayers.ARMOR_TRANSLUCENT_NO_CULL.apply(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE))
-                    );
-                }
-            }
-            return parent.getTrimConsumer(slot, provider, material, trim, layer);
         }
     }
 }
