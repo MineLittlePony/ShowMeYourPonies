@@ -25,11 +25,6 @@ group = project.group
 description = project.displayname
 archivesBaseName = project.name
 
-loom {
-    mixin.defaultRefmapName = 'smyp.mixin.refmap.json'
-    //accessWidenerPath = file('src/main/resources/minelp.aw')
-}
-
 reckon {
     scopeFromProp()
     stageFromProp('beta', 'rc', 'final')
