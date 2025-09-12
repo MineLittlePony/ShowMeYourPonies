@@ -19,7 +19,7 @@ java {
 }
 
 outlet.allowSnapshotsForProject = false
-outlet.mcVersionRange = ">=${project.minecraft_version}"
+outlet.mcVersionRange = project.minecraft_version_range
 
 group = project.group
 description = project.displayname
