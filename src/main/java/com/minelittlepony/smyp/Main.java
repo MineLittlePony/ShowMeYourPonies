@@ -3,20 +3,18 @@ package com.minelittlepony.smyp;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.render.*;
+import net.minecraft.client.render.entity.equipment.EquipmentModel;
 import net.minecraft.client.render.entity.state.BipedEntityRenderState;
 import net.minecraft.client.render.entity.state.LivingEntityRenderState;
-import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.equipment.EquipmentModel;
-import net.minecraft.item.equipment.EquipmentModel.LayerType;
+import net.minecraft.item.equipment.EquipmentAsset;
 import net.minecraft.item.equipment.trim.ArmorTrim;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.Arm;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
-import nl.enjarai.showmeyourskin.client.ModRenderLayers;
+import nl.enjarai.showmeyourskin.ShowMeYourSkinClient;
 import nl.enjarai.showmeyourskin.config.HideableEquipment;
 import nl.enjarai.showmeyourskin.util.ArmorContext;
 import nl.enjarai.showmeyourskin.util.MixinContext;
@@ -24,7 +22,6 @@ import nl.enjarai.showmeyourskin.util.MixinContext;
 import org.jetbrains.annotations.Nullable;
 
 import com.minelittlepony.client.model.armour.ArmourRendererPlugin;
-import com.minelittlepony.client.model.armour.ArmourRendererPlugin.ArmourType;
 
 public class Main implements ClientModInitializer {
     @Override
@@ -42,25 +39,16 @@ public class Main implements ClientModInitializer {
             this.parent = parent;
         }
 
-        //@Override
-        public ItemStack[] getArmorStacks(LivingEntity entity, EquipmentSlot armorSlot, EquipmentModel.LayerType layerType, ArmourType type) {
-            MixinContext.ENTITY.setContext(entity);
-            MixinContext.ARMOR.setContext(context = new ArmorContext(switch (type) {
-                case ARMOUR -> HideableEquipment.fromSlot(armorSlot);
-                case CAPE, ELYTRA -> HideableEquipment.ELYTRA;
-                case SKULL -> HideableEquipment.HAT;
-            }, entity));
-            return new ItemStack[] {  entity.getEquippedStack(armorSlot) };
-        }
-
         @Override
         public ItemStack[] getArmorStacks(BipedEntityRenderState state, EquipmentSlot armorSlot, EquipmentModel.LayerType layerType, ArmourType type) {
-            MixinContext.ENTITY.setContext(entity);
-            MixinContext.ARMOR.setContext(context = new ArmorContext(switch (type) {
-                case ARMOUR -> HideableEquipment.fromSlot(armorSlot);
-                case CAPE, ELYTRA -> HideableEquipment.ELYTRA;
-                case SKULL -> HideableEquipment.HAT;
-            }, state));
+            if (ShowMeYourSkinClient.ENTITY_RENDER_STATE_KEY.get(state) instanceof LivingEntity entity) {
+                MixinContext.ENTITY.setContext(entity);
+                MixinContext.ARMOR.setContext(context = new ArmorContext(switch (type) {
+                    case ARMOUR -> HideableEquipment.fromSlot(armorSlot);
+                    case CAPE, ELYTRA -> HideableEquipment.ELYTRA;
+                    case SKULL -> HideableEquipment.HAT;
+                }, entity));
+            }
             return parent.getArmorStacks(state, armorSlot, layerType, type);
         }
 
@@ -87,34 +75,38 @@ public class Main implements ClientModInitializer {
         }
 
         @Override
-        public float getElytraAlpha(ItemStack stack, Model model, LivingEntityRenderState entity) {
-            MixinContext.ARMOR.setContext(context = new ArmorContext(HideableEquipment.ELYTRA, entity));
-            return parent.getElytraAlpha(stack, model, entity) * (context.shouldModify() ? context.getApplicablePieceTransparency() : 1);
+        public float getElytraAlpha(ItemStack stack, Model model, LivingEntityRenderState state) {
+            if (ShowMeYourSkinClient.ENTITY_RENDER_STATE_KEY.get(state) instanceof LivingEntity entity) {
+                MixinContext.ARMOR.setContext(context = new ArmorContext(HideableEquipment.ELYTRA, entity));
+            }
+            return parent.getElytraAlpha(stack, model, state) * (context.shouldModify() ? context.getApplicablePieceTransparency() : 1);
         }
 
         @Override
         @Nullable
         public RenderLayer getArmourLayer(EquipmentSlot slot, Identifier texture, EquipmentModel.LayerType layerType) {
             return context != null && context.shouldModify() && context.getApplicablePieceTransparency() < 1
-                    ? ModRenderLayers.ARMOR_TRANSLUCENT_NO_CULL.apply(texture)
+                    ? RenderLayer.createArmorTranslucent(texture)
                     : parent.getArmourLayer(slot, texture, layerType);
         }
 
         @Override
         @Nullable
-        public RenderLayer getTrimLayer(EquipmentSlot slot, ArmorTrim trim, EquipmentModel.LayerType layerType, Identifier modelId) {
+        public RenderLayer getTrimLayer(EquipmentSlot slot, ArmorTrim trim, EquipmentModel.LayerType layerType, RegistryKey<EquipmentAsset> assetId) {
             return context != null && context.shouldModify() && context.getApplicableTrimTransparency() < 1
-                    ? ModRenderLayers.ARMOR_TRANSLUCENT_NO_CULL.apply(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE)
-                    : parent.getTrimLayer(slot, trim, layerType, modelId);
+                    ? RenderLayer.createArmorTranslucent(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE)
+                    : parent.getTrimLayer(slot, trim, layerType, assetId);
         }
 
         @Override
         @Nullable
-        public RenderLayer getCapeLayer(BipedEntityRenderState entity, Identifier texture) {
-            MixinContext.ARMOR.setContext(context = new ArmorContext(HideableEquipment.ELYTRA, entity));
-            return context.shouldModify() && context.getApplicablePieceTransparency() <= 0
+        public RenderLayer getCapeLayer(BipedEntityRenderState state, Identifier texture) {
+            if (ShowMeYourSkinClient.ENTITY_RENDER_STATE_KEY.get(state) instanceof LivingEntity entity) {
+                MixinContext.ARMOR.setContext(context = new ArmorContext(HideableEquipment.ELYTRA, entity));
+            }
+            return context != null && context.shouldModify() && context.getApplicablePieceTransparency() <= 0
                     ? null
-                    : parent.getCapeLayer(entity, texture);
+                    : parent.getCapeLayer(state, texture);
         }
     }
 }
