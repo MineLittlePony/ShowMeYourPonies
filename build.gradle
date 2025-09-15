@@ -4,7 +4,7 @@ buildscript {
     }
 }
 plugins {
-    id 'fabric-loom' version '1.7-SNAPSHOT'
+    id 'fabric-loom' version '1.10-SNAPSHOT'
     id 'maven-publish'
     id 'com.modrinth.minotaur' version '2.+'
     id 'org.ajoberstar.reckon' version '0.13.1'
@@ -19,7 +19,7 @@ java {
 }
 
 outlet.allowSnapshotsForProject = false
-outlet.mcVersionRange = ">=${project.minecraft_version}"
+outlet.mcVersionRange = project.minecraft_version_range
 
 group = project.group
 description = project.displayname
@@ -39,6 +39,7 @@ repositories {
     maven { name 'smys-release'; url 'https://maven.enjarai.dev/releases' }
     maven { name 'smys-mirror'; url 'https://maven.enjarai.dev/mirrors' }
     maven { name 'Ladysnake Mods'; url 'https://maven.ladysnake.org/releases' }
+    maven { name 'Modrinth'; url 'https://api.modrinth.com/maven' }
 }
 
 dependencies {
@@ -47,7 +48,7 @@ dependencies {
     modApi "net.fabricmc:fabric-loader:${project.loader_version}"
     modApi "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modApi "com.minelittlepony:minelittlepony:${project.minelp_version}"
-    modApi "nl.enjarai:show-me-your-skin:${project.smys_version}"
+    modApi "maven.modrinth:show-me-your-skin:${project.smys_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 
     // show me your skins dependencies
