@@ -3,6 +3,7 @@ package com.minelittlepony.smyp;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.render.*;
+import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.entity.equipment.EquipmentModel;
 import net.minecraft.client.render.entity.state.BipedEntityRenderState;
 import net.minecraft.client.render.entity.state.LivingEntityRenderState;
@@ -53,10 +54,10 @@ public class Main implements ClientModInitializer {
         }
 
         @Override
-        public void onArmourRendered(LivingEntityRenderState state, MatrixStack matrices, VertexConsumerProvider provider, EquipmentSlot armorSlot, EquipmentModel.LayerType layerType, ArmourType type) {
+        public void onArmourRendered(LivingEntityRenderState state, MatrixStack matrices, OrderedRenderCommandQueue queue, EquipmentSlot armorSlot, EquipmentModel.LayerType layerType, ArmourType type) {
             MixinContext.ENTITY.clearContext();
             MixinContext.ARMOR.clearContext();
-            parent.onArmourRendered(state, matrices, provider, armorSlot, layerType, type);
+            parent.onArmourRendered(state, matrices, queue, armorSlot, layerType, type);
         }
 
         @Override
@@ -75,7 +76,7 @@ public class Main implements ClientModInitializer {
         }
 
         @Override
-        public float getElytraAlpha(ItemStack stack, Model model, LivingEntityRenderState state) {
+        public float getElytraAlpha(ItemStack stack, Model<?> model, LivingEntityRenderState state) {
             if (ShowMeYourSkinClient.ENTITY_RENDER_STATE_KEY.get(state) instanceof LivingEntity entity) {
                 MixinContext.ARMOR.setContext(context = new ArmorContext(HideableEquipment.ELYTRA, entity));
             }
